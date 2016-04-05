@@ -1,0 +1,37 @@
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+ncs-matrix\.settings
+ncs-matrix\.project
+ncs-matrix\.classpath
+ncs-matrix\target
+ncs-matrix/.project
+
+.project
+.settings
+.classpath
+target
+/node_modules
+
+# logs #
+logs
+
+# idea # 
+.idea
+ncs-matrix\.idea
+ncs-matrix/.idea
+*.iml
+/bin/*
+
+ncs-matrix/ncs-matrix.iml
+
+Servers
+.metadata
+
+ncs-matrix/.externalToolBuilders/org.eclipse.wst.jsdt.core.javascriptValidator.launch
+
+
