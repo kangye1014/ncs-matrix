@@ -78,14 +78,14 @@ public class MatrixTableSearch {
         }
     }
 
-    class QuotaCalculationTask implements Callable<List<QuotaField>> {
+    abstract class QuotaCalculationTask implements Callable<List<QuotaField>> {
 
         private String SQL;
         private Quota quota;
+        @SuppressWarnings("unused")
         private Dimension dimension;
 
-        // public abstract List<QuotaField> calculatResult(String SQL, Quota
-        // quota, Dimension dimension);
+        abstract Double resultMapping(ResultSet resultSet) throws SQLException;
 
         public QuotaCalculationTask(String SQL, Quota quota, Dimension dimension) {
             this.SQL = SQL;
@@ -113,9 +113,9 @@ public class MatrixTableSearch {
 
                                         List<QuotaField> quotaFields = new ArrayList<>();
                                         while (resultSet.next()) {
-                                            Double value = resultSet.getDouble("pv");
+                                            Double value = resultMapping(resultSet);
                                             QuotaField quotaField = new QuotaField(quota, value);
-                                            quotaField.setDimension(dimension);
+                                            quotaField.setDimension(new Dimension());
                                             quotaFields.add(quotaField);
                                         }
 
@@ -146,12 +146,30 @@ public class MatrixTableSearch {
         CompletionService<List<QuotaField>> completionService = new ExecutorCompletionService<List<QuotaField>>(
                 executorService);
 
-        completionService.submit(new QuotaCalculationTask("select count(*) pv from ca_summary_136191", Quota.PV,
-                new Dimension()));
-        completionService.submit(new QuotaCalculationTask("select count(*) pv from ca_summary_136191", Quota.UV,
-                new Dimension()));
-        completionService.submit(new QuotaCalculationTask("select count(*) pv from ca_summary_136191", Quota.VISITORS,
-                new Dimension()));
+        // 计算维度 pv
+        completionService.submit(new QuotaCalculationTask("select log_day,keyword_id, SUM(impressions) AS pv "
+                + "from ca_summary_136191 where log_day >= '2016-02-01' AND log_day <= '2016-02-28' "
+                + "GROUP BY log_day , keyword_id , impressions", Quota.PV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("pv");
+            }
+        });
+        // 计算维度uv
+        completionService.submit(new QuotaCalculationTask("select log_day,keyword_id, SUM(impressions) AS UV "
+                + "from ca_summary_136191 where log_day >= '2016-02-01' AND log_day <= '2016-02-28' "
+                + "GROUP BY log_day , keyword_id , impressions", Quota.UV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        // 其他
+        completionService.submit(new QuotaCalculationTask("select log_day,keyword_id, SUM(impressions) AS visitors "
+                + "from ca_summary_136191 where log_day >= '2016-02-01' AND log_day <= '2016-02-28' "
+                + "GROUP BY log_day , keyword_id , impressions", Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("visitors");
+            }
+        });
 
         for (int i = 0; i < 3; i++) {
 

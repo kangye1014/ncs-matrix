@@ -1,11 +1,14 @@
 package com.cubead.test.base;
 
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.cubead.performance.martix.MatrixTableSearch;
+import com.cubead.performance.martix.MatrixTableSearch.QuotaField;
 
 public class ProductJdbcTest extends BaseTest {
 
@@ -22,7 +25,11 @@ public class ProductJdbcTest extends BaseTest {
 
     @Test
     public void testMatrixTableSearch() {
+        long t1 = System.currentTimeMillis();
         Assert.assertNotNull(matrixTableSearch);
-        matrixTableSearch.getExampleStatistics();
+        List<List<QuotaField>> result = matrixTableSearch.getExampleStatistics();
+
+        logger.info("查询结果：{}", result.size());
+        logger.info("Query Cost:{}", (System.currentTimeMillis() - t1) + " ms");
     }
 }
