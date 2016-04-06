@@ -10,6 +10,8 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,6 +20,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MatrixTableSearch {
+
+    private static final Logger logger = LoggerFactory.getLogger(MatrixTableSearch.class);
 
     ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -95,7 +99,7 @@ public class MatrixTableSearch {
 
             CompletionService<List<QuotaField>> completionService = new ExecutorCompletionService<List<QuotaField>>(
                     executorService);
-            final String tableName = "ca_summary";
+            final String tableName = "ca_summary_136191";
 
             for (int i = 0; i < 10; i++) {
                 final int index = i;
@@ -109,7 +113,7 @@ public class MatrixTableSearch {
 
                                         List<QuotaField> quotaFields = new ArrayList<>();
                                         while (resultSet.next()) {
-                                            Double value = resultSet.getDouble("pv_count");
+                                            Double value = resultSet.getDouble("pv");
                                             QuotaField quotaField = new QuotaField(quota, value);
                                             quotaField.setDimension(dimension);
                                             quotaFields.add(quotaField);
@@ -130,6 +134,7 @@ public class MatrixTableSearch {
                 allQuotaFields.addAll(quotaFields);
             }
 
+            logger.info("quota: {},size: {}", quota, allQuotaFields.size());
             return allQuotaFields;
         }
 
@@ -141,11 +146,11 @@ public class MatrixTableSearch {
         CompletionService<List<QuotaField>> completionService = new ExecutorCompletionService<List<QuotaField>>(
                 executorService);
 
-        completionService.submit(new QuotaCalculationTask("select count(*) pv from ca_summary_pv", Quota.PV,
+        completionService.submit(new QuotaCalculationTask("select count(*) pv from ca_summary_136191", Quota.PV,
                 new Dimension()));
-        completionService.submit(new QuotaCalculationTask("select count(*) from ca_summary_ux", Quota.UV,
+        completionService.submit(new QuotaCalculationTask("select count(*) pv from ca_summary_136191", Quota.UV,
                 new Dimension()));
-        completionService.submit(new QuotaCalculationTask("select count(*) from ca_summary_visitors", Quota.VISITORS,
+        completionService.submit(new QuotaCalculationTask("select count(*) pv from ca_summary_136191", Quota.VISITORS,
                 new Dimension()));
 
         for (int i = 0; i < 3; i++) {
