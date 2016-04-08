@@ -19,17 +19,17 @@ public class ProductJdbcTest extends BaseTest {
     private MatrixTableSearch matrixTableSearch;
 
     @Test
-    public void testJdbcIsAutowired() {
-
-    }
-
-    @Test
     public void testMatrixTableSearch() {
         long t1 = System.currentTimeMillis();
         Assert.assertNotNull(matrixTableSearch);
         List<List<QuotaField>> result = matrixTableSearch.getExampleStatistics();
 
+        logger.info("Query Cost:{}", (System.currentTimeMillis() - t1) + " ms");
+
         logger.info("查询结果：{}", result.size());
+        for (List<QuotaField> quotaFields : result) {
+            logger.info("查询结果：{}", quotaFields.size());
+        }
         logger.info("Query Cost:{}", (System.currentTimeMillis() - t1) + " ms");
     }
 }

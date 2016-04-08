@@ -99,29 +99,35 @@ public class MatrixTableSearch {
 
             CompletionService<List<QuotaField>> completionService = new ExecutorCompletionService<List<QuotaField>>(
                     executorService);
-            final String tableName = "ca_summary_136191";
+
+            final String[] tableNames = { "ca_summary_136191_uv", "ca_summary_136191_impressions",
+                    "ca_summary_136191_pv", "ca_summary_136191_cost" };
 
             for (int i = 0; i < 10; i++) {
                 final int index = i;
                 completionService.submit(new Callable<List<QuotaField>>() {
                     public List<QuotaField> call() throws Exception {
 
-                        return jdbcTemplate.query(SQL.toLowerCase().replaceAll(tableName, tableName + "_" + index),
-                                new ResultSetExtractor<List<QuotaField>>() {
-                                    public List<QuotaField> extractData(ResultSet resultSet) throws SQLException,
-                                            DataAccessException {
+                        String activSql = SQL;
+                        for (final String tableName : tableNames) {
+                            activSql = activSql.toLowerCase().replaceAll(tableName, tableName + "_" + index);
+                        }
+                        // logger.info(activSql);
+                        return jdbcTemplate.query(activSql, new ResultSetExtractor<List<QuotaField>>() {
+                            public List<QuotaField> extractData(ResultSet resultSet) throws SQLException,
+                                    DataAccessException {
 
-                                        List<QuotaField> quotaFields = new ArrayList<>();
-                                        while (resultSet.next()) {
-                                            Double value = resultMapping(resultSet);
-                                            QuotaField quotaField = new QuotaField(quota, value);
-                                            quotaField.setDimension(new Dimension());
-                                            quotaFields.add(quotaField);
-                                        }
+                                List<QuotaField> quotaFields = new ArrayList<>();
+                                while (resultSet.next()) {
+                                    Double value = resultMapping(resultSet);
+                                    QuotaField quotaField = new QuotaField(quota, value);
+                                    quotaField.setDimension(new Dimension());
+                                    quotaFields.add(quotaField);
+                                }
 
-                                        return quotaFields;
-                                    }
-                                });
+                                return quotaFields;
+                            }
+                        });
 
                     }
                 });
@@ -131,13 +137,13 @@ public class MatrixTableSearch {
 
             for (int i = 0; i < 10; i++) {
                 List<QuotaField> quotaFields = completionService.take().get();
+                // logger.info("子表查询结果：{}", quotaFields);
                 allQuotaFields.addAll(quotaFields);
             }
 
-            logger.info("quota: {},size: {}", quota, allQuotaFields.size());
+            // logger.info("quota: {},size: {}", quota, allQuotaFields.size());
             return allQuotaFields;
         }
-
     }
 
     public List<List<QuotaField>> getExampleStatistics() {
@@ -146,32 +152,253 @@ public class MatrixTableSearch {
         CompletionService<List<QuotaField>> completionService = new ExecutorCompletionService<List<QuotaField>>(
                 executorService);
 
-        // 计算维度 pv
-        completionService.submit(new QuotaCalculationTask("select log_day,keyword_id, SUM(impressions) AS pv "
-                + "from ca_summary_136191 where log_day >= '2016-02-01' AND log_day <= '2016-02-28' "
-                + "GROUP BY log_day , keyword_id , impressions", Quota.PV, new Dimension()) {
+        // 计算维度 cost
+        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.PV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("cost");
+            }
+        });
+        // 计算维度impression
+        completionService.submit(new QuotaCalculationTask(IMPRESSIONS_SQL, Quota.UV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("impressions");
+            }
+        });
+        // 计算维度pv
+        completionService.submit(new QuotaCalculationTask(PV_SQL, Quota.VISITORS, new Dimension()) {
             Double resultMapping(ResultSet resultSet) throws SQLException {
                 return resultSet.getDouble("pv");
             }
         });
         // 计算维度uv
-        completionService.submit(new QuotaCalculationTask("select log_day,keyword_id, SUM(impressions) AS UV "
-                + "from ca_summary_136191 where log_day >= '2016-02-01' AND log_day <= '2016-02-28' "
-                + "GROUP BY log_day , keyword_id , impressions", Quota.UV, new Dimension()) {
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
             Double resultMapping(ResultSet resultSet) throws SQLException {
                 return resultSet.getDouble("uv");
             }
         });
-        // 其他
-        completionService.submit(new QuotaCalculationTask("select log_day,keyword_id, SUM(impressions) AS visitors "
-                + "from ca_summary_136191 where log_day >= '2016-02-01' AND log_day <= '2016-02-28' "
-                + "GROUP BY log_day , keyword_id , impressions", Quota.VISITORS, new Dimension()) {
+        // 计算维度
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
             Double resultMapping(ResultSet resultSet) throws SQLException {
-                return resultSet.getDouble("visitors");
+                return resultSet.getDouble("uv");
             }
         });
 
-        for (int i = 0; i < 3; i++) {
+        // 计算维度 cost
+        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.PV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("cost");
+            }
+        });
+        // 计算维度impression
+        completionService.submit(new QuotaCalculationTask(IMPRESSIONS_SQL, Quota.UV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("impressions");
+            }
+        });
+        // 计算维度pv
+        completionService.submit(new QuotaCalculationTask(PV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("pv");
+            }
+        });
+        // 计算维度uv
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        // 计算维度
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+
+        // 计算维度 cost
+        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.PV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("cost");
+            }
+        });
+        // 计算维度impression
+        completionService.submit(new QuotaCalculationTask(IMPRESSIONS_SQL, Quota.UV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("impressions");
+            }
+        });
+        // 计算维度pv
+        completionService.submit(new QuotaCalculationTask(PV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("pv");
+            }
+        });
+        // 计算维度uv
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        // 计算维度
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+
+        // 计算维度 cost
+        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.PV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("cost");
+            }
+        });
+        // 计算维度impression
+        completionService.submit(new QuotaCalculationTask(IMPRESSIONS_SQL, Quota.UV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("impressions");
+            }
+        });
+        // 计算维度pv
+        completionService.submit(new QuotaCalculationTask(PV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("pv");
+            }
+        });
+        // 计算维度uv
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        // 计算维度
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        // 计算维度 cost
+        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.PV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("cost");
+            }
+        });
+        // 计算维度impression
+        completionService.submit(new QuotaCalculationTask(IMPRESSIONS_SQL, Quota.UV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("impressions");
+            }
+        });
+        // 计算维度pv
+        completionService.submit(new QuotaCalculationTask(PV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("pv");
+            }
+        });
+        // 计算维度uv
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        // 计算维度
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+
+        // 计算维度 cost
+        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.PV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("cost");
+            }
+        });
+        // 计算维度impression
+        completionService.submit(new QuotaCalculationTask(IMPRESSIONS_SQL, Quota.UV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("impressions");
+            }
+        });
+        // 计算维度pv
+        completionService.submit(new QuotaCalculationTask(PV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("pv");
+            }
+        });
+        // 计算维度uv
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        // 计算维度
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+
+        // 计算维度 cost
+        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.PV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("cost");
+            }
+        });
+        // 计算维度impression
+        completionService.submit(new QuotaCalculationTask(IMPRESSIONS_SQL, Quota.UV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("impressions");
+            }
+        });
+        // 计算维度pv
+        completionService.submit(new QuotaCalculationTask(PV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("pv");
+            }
+        });
+        // 计算维度uv
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        // 计算维度
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+
+        // 计算维度 cost
+        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.PV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("cost");
+            }
+        });
+        // 计算维度impression
+        completionService.submit(new QuotaCalculationTask(IMPRESSIONS_SQL, Quota.UV, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("impressions");
+            }
+        });
+        // 计算维度pv
+        completionService.submit(new QuotaCalculationTask(PV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("pv");
+            }
+        });
+        // 计算维度uv
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        // 计算维度
+        completionService.submit(new QuotaCalculationTask(UV_SQL, Quota.VISITORS, new Dimension()) {
+            Double resultMapping(ResultSet resultSet) throws SQLException {
+                return resultSet.getDouble("uv");
+            }
+        });
+        for (int i = 0; i < 40; i++) {
 
             try {
 
@@ -187,4 +414,21 @@ public class MatrixTableSearch {
 
         return quotaResults;
     }
+
+    /* 多日各关键词消费合计 */
+    public static final String COST_SQL = "SELECT sub_tenant_id, campaign, adgroup, keyword, sum(cost) cost FROM ca_summary_136191_cost "
+            + "WHERE log_day >=23 AND log_day <= 50 GROUP BY sub_tenant_id, campaign, adgroup, keyword";
+
+    /* 多日各关键词展示量合计 */
+    public static final String IMPRESSIONS_SQL = "SELECT sub_tenant_id, campaign, adgroup, keyword, sum(impressions) impressions FROM ca_summary_136191_impressions"
+            + " WHERE log_day >=23 AND log_day <= 50 GROUP BY sub_tenant_id, campaign, adgroup, keyword";
+
+    /* 每日各关键词合计pv */
+    public static final String PV_SQL = "SELECT sub_tenant_id, campaign, adgroup, keyword, COUNT(*) pv  FROM ca_summary_136191_pv "
+            + "WHERE log_day >=23 AND log_day <= 50 GROUP BY sub_tenant_id, campaign, adgroup, keyword";
+
+    /* 每日各关键词合计uv */
+    public static final String UV_SQL = " SELECT sub_tenant_id, campaign, adgroup, keyword, COUNT(distinct own_uid) as uv "
+            + "FROM ca_summary_136191_uv WHERE log_day >=23 AND log_day <= 50 GROUP BY sub_tenant_id, campaign, adgroup, keyword";
+
 }
