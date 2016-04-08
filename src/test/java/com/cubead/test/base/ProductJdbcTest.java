@@ -1,6 +1,9 @@
 package com.cubead.test.base;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,16 +23,41 @@ public class ProductJdbcTest extends BaseTest {
 
     @Test
     public void testMatrixTableSearch() {
+
+        // 维度
+        TreeSet<Integer> fieldHashSet = new TreeSet<Integer>();
+        Map<String, Double[]> mapValuesMap = new HashMap<>();
+
         long t1 = System.currentTimeMillis();
         Assert.assertNotNull(matrixTableSearch);
-        List<List<QuotaField>> result = matrixTableSearch.getExampleStatistics();
+        List<List<QuotaField>> result = matrixTableSearch.getExampleStatistics(fieldHashSet);
 
-        logger.info("Query Cost:{}", (System.currentTimeMillis() - t1) + " ms");
+        logger.info("查询耗时:{}", (System.currentTimeMillis() - t1) + " ms");
+        logger.info("编码顺序队列:{}", fieldHashSet.size());
+
+        Integer[] hashCodeFields = fieldHashSet.toArray(new Integer[] {});
+        logger.info("编码顺序队列:{}", hashCodeFields.length);
 
         logger.info("查询结果：{}", result.size());
         for (List<QuotaField> quotaFields : result) {
-            logger.info("查询结果：{}", quotaFields.size());
+            // logger.info("查询结果：{}", quotaFields.size());
+            for (QuotaField quotaField : quotaFields) {
+                String key = quotaField.getDimension().parseAsKey();
+                if (mapValuesMap.containsKey(key)) {
+                    Double[] doubles = mapValuesMap.get(key);
+                    doubles[quotaField.getQuota().getIndex()] += quotaField.getValue();
+                    mapValuesMap.put(key, doubles);
+                } else {
+                    Double[] doubles = new Double[] { 0.0, 0.0, 0.0, 0.0, 0.0 };
+                    doubles[quotaField.getQuota().getIndex()] = quotaField.getValue();
+                    mapValuesMap.put(key, doubles);
+                }
+
+            }
         }
-        logger.info("Query Cost:{}", (System.currentTimeMillis() - t1) + " ms");
+
+        logger.info("编码顺序队列:{}", mapValuesMap.size());
+        logger.info(mapValuesMap.toString());
+        logger.info("查询和合并耗时:{}", (System.currentTimeMillis() - t1) + " ms");
     }
 }
