@@ -33,16 +33,12 @@ public class ProductJdbcTest extends BaseTest {
         List<List<QuotaField>> result = matrixTableSearch.getExampleStatistics(fieldHashSet);
 
         logger.info("查询耗时:{}", (System.currentTimeMillis() - t1) + " ms");
-        logger.info("编码顺序队列:{}", fieldHashSet.size());
-
-        Integer[] hashCodeFields = fieldHashSet.toArray(new Integer[] {});
-        logger.info("编码顺序队列:{}", hashCodeFields.length);
-
         logger.info("查询结果：{}", result.size());
+
         for (List<QuotaField> quotaFields : result) {
-            // logger.info("查询结果：{}", quotaFields.size());
+            logger.info("查询结果：{}", quotaFields.size());
             for (QuotaField quotaField : quotaFields) {
-                String key = quotaField.getDimension().parseAsKey();
+                String key = quotaField.getPaserKeys();
                 if (mapValuesMap.containsKey(key)) {
                     Double[] doubles = mapValuesMap.get(key);
                     doubles[quotaField.getQuota().getIndex()] += quotaField.getValue();
@@ -57,7 +53,8 @@ public class ProductJdbcTest extends BaseTest {
         }
 
         logger.info("编码顺序队列:{}", mapValuesMap.size());
-        logger.info(mapValuesMap.toString());
+        // logger.info(mapValuesMap.toString());
         logger.info("查询和合并耗时:{}", (System.currentTimeMillis() - t1) + " ms");
     }
+
 }

@@ -23,5 +23,4 @@ public class BaseTest {
     public static void aftertest() {
         logger.warn("======================单元测试结束=================");
     }
-
 }

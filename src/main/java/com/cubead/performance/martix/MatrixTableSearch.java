@@ -30,7 +30,7 @@ public class MatrixTableSearch {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    class Dimen {
+    public class Dimen {
 
         private String field;
         private Object value;
@@ -94,24 +94,67 @@ public class MatrixTableSearch {
     /**
      * 维度
      */
-    public class Dimension extends ArrayList<Dimen> {
+    public class Dimension implements Cloneable {
+
+        private List<Dimen> dimens;
 
         public Dimension(String... fields) {
-            super();
+
+            dimens = new ArrayList<>();
             if (null == fields)
                 return;
             for (String dimen : fields) {
-                add(new Dimen(dimen));
+                dimens.add(new Dimen(dimen));
             }
         }
 
         public String parseAsKey() {
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < this.size(); i++) {
-                sb.append(get(i).value);
+            for (int i = 0; i < dimens.size(); i++) {
+                sb.append(dimens.get(i).value);
                 sb.append("-");
             }
             return sb.toString();
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + getOuterType().hashCode();
+            result = prime * result + ((dimens == null) ? 0 : dimens.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Dimension other = (Dimension) obj;
+            if (!getOuterType().equals(other.getOuterType()))
+                return false;
+            if (dimens == null) {
+                if (other.dimens != null)
+                    return false;
+            } else if (!dimens.equals(other.dimens))
+                return false;
+            return true;
+        }
+
+        private MatrixTableSearch getOuterType() {
+            return MatrixTableSearch.this;
+        }
+
+        public List<Dimen> getDimens() {
+            return dimens;
+        }
+
+        public void setDimens(List<Dimen> dimens) {
+            this.dimens = dimens;
         }
     }
 
@@ -138,14 +181,14 @@ public class MatrixTableSearch {
 
         private Double value;
 
-        private Dimension dimension;
+        private String paserKeys;
 
-        public Dimension getDimension() {
-            return dimension;
+        public String getPaserKeys() {
+            return paserKeys;
         }
 
-        public void setDimension(Dimension dimension) {
-            this.dimension = dimension;
+        public void setPaserKeys(String paserKeys) {
+            this.paserKeys = paserKeys;
         }
 
         public Quota getQuota() {
@@ -164,7 +207,7 @@ public class MatrixTableSearch {
 
         @Override
         public String toString() {
-            return "QuotaField [quota=" + quota + ", value=" + value + ", dimension=" + dimension + "]";
+            return "QuotaField [quota=" + quota + ", value=" + value + ", paserKeys=" + paserKeys + "]";
         }
     }
 
@@ -178,7 +221,7 @@ public class MatrixTableSearch {
         private Quota quota;
         @SuppressWarnings("unused")
         private Dimension dimension;
-        private boolean isOrderQuota = false;
+        private volatile boolean isOrderQuota = false;
         private QueryCallBack queryCallBack;
 
         abstract String setValueField();
@@ -219,24 +262,33 @@ public class MatrixTableSearch {
                         for (final String tableName : tableNames) {
                             activSql = activSql.toLowerCase().replaceAll(tableName, tableName + "_" + index);
                         }
-                        // logger.info(activSql);
+
                         return jdbcTemplate.query(activSql, new ResultSetExtractor<List<QuotaField>>() {
                             public List<QuotaField> extractData(ResultSet resultSet) throws SQLException,
                                     DataAccessException {
 
                                 List<QuotaField> quotaFields = new ArrayList<>();
                                 while (resultSet.next()) {
-                                    for (Dimen dimen : dimension) {
-                                        dimen.setValue(resultSet.getObject(dimen.getField()));
+
+                                    Dimension dimensionTemp = new Dimension();
+                                    List<Dimen> dimens = new ArrayList<>();
+                                    for (int i = 0; i < dimension.getDimens().size(); i++) {
+
+                                        String field = dimension.getDimens().get(i).field;
+                                        Dimen dimen = new Dimen(field);
+                                        dimen.setValue(resultSet.getObject(field));
+                                        dimens.add(dimen);
+
                                     }
+                                    dimensionTemp.setDimens(dimens);
+
                                     QuotaField quotaField = new QuotaField(quota, resultSet.getDouble(setValueField()));
-                                    quotaField.setDimension(dimension);
+                                    quotaField.setPaserKeys(dimensionTemp.parseAsKey());
                                     if (null != queryCallBack) {
                                         queryCallBack.orderFieldHandle(quotaField);
                                     }
                                     quotaFields.add(quotaField);
                                 }
-
                                 return quotaFields;
                             }
                         });
@@ -269,14 +321,7 @@ public class MatrixTableSearch {
                 executorService);
 
         // 计算维度 cost
-        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.COST, new Dimension(cost_sql_fields),
-                new QueryCallBack() {
-                    public void orderFieldHandle(QuotaField quotaField) {
-                        synchronized (fieldHashSet) {
-                            // /fieldHashSet.add(quotaField.getDimension().hashCode());
-                        }
-                    }
-                }) {
+        completionService.submit(new QuotaCalculationTask(COST_SQL, Quota.COST, new Dimension(cost_sql_fields)) {
             String setValueField() {
                 return "cost";
             }
