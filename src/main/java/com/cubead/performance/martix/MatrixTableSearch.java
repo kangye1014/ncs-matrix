@@ -25,12 +25,12 @@ public class MatrixTableSearch {
 
     private static final Logger logger = LoggerFactory.getLogger(MatrixTableSearch.class);
 
-    ExecutorService executorService = Executors.newCachedThreadPool();
+    ExecutorService executorService = Executors.newFixedThreadPool(50);
 
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    public class Dimen {
+    public static class Dimen {
 
         private String field;
         private Object value;
@@ -57,7 +57,6 @@ public class MatrixTableSearch {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result + getOuterType().hashCode();
             result = prime * result + ((value == null) ? 0 : value.hashCode());
             return result;
         }
@@ -71,8 +70,6 @@ public class MatrixTableSearch {
             if (getClass() != obj.getClass())
                 return false;
             Dimen other = (Dimen) obj;
-            if (!getOuterType().equals(other.getOuterType()))
-                return false;
             if (field == null) {
                 if (other.field != null)
                     return false;
@@ -86,15 +83,12 @@ public class MatrixTableSearch {
             return true;
         }
 
-        private MatrixTableSearch getOuterType() {
-            return MatrixTableSearch.this;
-        }
     }
 
     /**
      * 维度
      */
-    public class Dimension implements Cloneable {
+    public static class Dimension implements Cloneable {
 
         private List<Dimen> dimens;
 
@@ -121,7 +115,6 @@ public class MatrixTableSearch {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result + getOuterType().hashCode();
             result = prime * result + ((dimens == null) ? 0 : dimens.hashCode());
             return result;
         }
@@ -135,18 +128,12 @@ public class MatrixTableSearch {
             if (getClass() != obj.getClass())
                 return false;
             Dimension other = (Dimension) obj;
-            if (!getOuterType().equals(other.getOuterType()))
-                return false;
             if (dimens == null) {
                 if (other.dimens != null)
                     return false;
             } else if (!dimens.equals(other.dimens))
                 return false;
             return true;
-        }
-
-        private MatrixTableSearch getOuterType() {
-            return MatrixTableSearch.this;
         }
 
         public List<Dimen> getDimens() {
@@ -175,7 +162,7 @@ public class MatrixTableSearch {
         }
     }
 
-    public class QuotaField {
+    public static class QuotaField {
 
         private Quota quota;
 
@@ -262,7 +249,7 @@ public class MatrixTableSearch {
                         for (final String tableName : tableNames) {
                             activSql = activSql.toLowerCase().replaceAll(tableName, tableName + "_" + index);
                         }
-
+                        // logger.info(activSql);
                         return jdbcTemplate.query(activSql, new ResultSetExtractor<List<QuotaField>>() {
                             public List<QuotaField> extractData(ResultSet resultSet) throws SQLException,
                                     DataAccessException {
@@ -372,18 +359,18 @@ public class MatrixTableSearch {
     /* 多日各关键词消费合计 */
     String[] cost_sql_fields = { "sub_tenant_id", "campaign", "adgroup", "keyword" };
     public static final String COST_SQL = "SELECT sub_tenant_id, campaign, adgroup, keyword, sum(cost) cost FROM ca_summary_136191_cost "
-            + "WHERE log_day >=23 AND log_day <= 50 GROUP BY sub_tenant_id, campaign, adgroup, keyword order by cost";
+            + "WHERE log_day >=4 AND log_day <= 50 GROUP BY campaign,adgroup,keyword,sub_tenant_id order by cost";
 
     /* 多日各关键词展示量合计 */
     public static final String IMPRESSIONS_SQL = "SELECT sub_tenant_id, campaign, adgroup, keyword, sum(impressions) impressions FROM ca_summary_136191_impressions"
-            + " WHERE log_day >=23 AND log_day <= 50 GROUP BY sub_tenant_id, campaign, adgroup, keyword";
+            + " WHERE log_day >=5 AND log_day <= 150 GROUP BY keyword,adgroup,campaign,sub_tenant_id";
 
     /* 每日各关键词合计pv */
     public static final String PV_SQL = "SELECT sub_tenant_id, campaign, adgroup, keyword, COUNT(*) pv  FROM ca_summary_136191_pv "
-            + "WHERE log_day >=23 AND log_day <= 50 GROUP BY sub_tenant_id, campaign, adgroup, keyword";
+            + "WHERE log_day >=5 AND log_day <= 150 GROUP BY adgroup,campaign,sub_tenant_id, keyword";
 
     /* 每日各关键词合计uv */
     public static final String UV_SQL = " SELECT sub_tenant_id, campaign, adgroup, keyword, COUNT(distinct own_uid) as uv "
-            + "FROM ca_summary_136191_uv WHERE log_day >=23 AND log_day <= 50 GROUP BY sub_tenant_id, campaign, adgroup, keyword";
+            + "FROM ca_summary_136191_uv WHERE log_day >=5 AND log_day <= 150 GROUP BY adgroup,campaign,sub_tenant_id, keyword";
 
 }

@@ -53,6 +53,7 @@ public class ProductJdbcTest extends BaseTest {
         }
 
         logger.info("编码顺序队列:{}", mapValuesMap.size());
+
         // logger.info(mapValuesMap.toString());
         logger.info("查询和合并耗时:{}", (System.currentTimeMillis() - t1) + " ms");
     }
