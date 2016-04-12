@@ -41,8 +41,8 @@
 			value="jdbc:mysql://172.16.250.235/cubead_ep_test?characterEncoding=UTF-8" />
 		<property name="username" value="root" />
 		<property name="password" value="kevin" />
-		<property name="initialSize" value="10" />
-		<property name="maxActive" value="150" />
+		<property name="initialSize" value="30" />
+		<property name="maxActive" value="200" />
 		<property name="minIdle" value="10" />
 		<property name="maxWait" value="60000" />
 		<property name="validationQuery" value="true" />
@@ -57,7 +57,7 @@
 		<property name="filters" value="mergeStat" />
 	</bean>
 
-	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate" lazy-init="false">
 		<property name="dataSource" ref="dataSourceOne" />
 	</bean>
 
