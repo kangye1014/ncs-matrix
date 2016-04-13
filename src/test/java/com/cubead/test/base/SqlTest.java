@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -32,8 +32,8 @@ import com.lmax.disruptor.dsl.Disruptor;
 
 public class SqlTest extends BaseTest {
 
-    ExecutorService executorService = Executors.newFixedThreadPool(30);
-    ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+    static ExecutorService executorService = Executors.newFixedThreadPool(9);
+    static ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -42,7 +42,7 @@ public class SqlTest extends BaseTest {
     public void sqlExcuteTimeMilis() {
         long t1 = System.currentTimeMillis();
         final Dimension dimension = new Dimension("sub_tenant_id", "campaign", "adgroup", "keyword");
-        List<QuotaField> quotaFields = jdbcTemplate.query(SqlRandomGenerator.generteSql("ca_summary_136191_cost_1"),
+        List<QuotaField> quotaFields = jdbcTemplate.query(SqlRandomGenerator.generteSql("ca_summary_136191_pv_1"),
                 new ResultSetExtractor<List<QuotaField>>() {
                     public List<QuotaField> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
                         List<QuotaField> quotaFields = new ArrayList<>();
@@ -50,7 +50,23 @@ public class SqlTest extends BaseTest {
                         return quotaFields;
                     }
                 });
-        logger.info("查询耗时:{}", (System.currentTimeMillis() - t1) + " ms");
+        logger.info("单线程执行一个sql查询耗时:{}", (System.currentTimeMillis() - t1) + " ms");
+    }
+
+    // @Test
+    public void sqlExcuteTimeMilisWithTenSql() {
+        long t1 = System.currentTimeMillis();
+        for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
+            jdbcTemplate.query(sql, new ResultSetExtractor<List<QuotaField>>() {
+                public List<QuotaField> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
+                    List<QuotaField> quotaFields = new ArrayList<>();
+
+                    return quotaFields;
+                }
+            });
+        }
+
+        logger.info("10查询串行执行:{}", (System.currentTimeMillis() - t1) + " ms");
     }
 
     @Test
@@ -61,6 +77,7 @@ public class SqlTest extends BaseTest {
         long t1 = System.currentTimeMillis();
 
         for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
+            logger.info(sql);
             completionService.submit(new Callable<List<QuotaField>>() {
                 public List<QuotaField> call() throws Exception {
                     return jdbcTemplate.query(sql, new ResultSetExtractor<List<QuotaField>>() {
@@ -78,7 +95,7 @@ public class SqlTest extends BaseTest {
 
         List<QuotaField> allQuotaFields = new ArrayList<>();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < SqlRandomGenerator.split_table_numbers; i++) {
             try {
                 List<QuotaField> quotaFields = completionService.take().get();
                 // logger.info("子表查询结果：{}", quotaFields);
@@ -91,8 +108,8 @@ public class SqlTest extends BaseTest {
         logger.info("ten sql查询耗时:{}", (System.currentTimeMillis() - t1) + " ms");
     }
 
-    @After
-    public void afterClass() {
+    @AfterClass
+    public static void afterClass() {
         logger.info("close the pool");
         executorService.shutdown();
         singleExecutorService.shutdown();
@@ -105,6 +122,7 @@ public class SqlTest extends BaseTest {
         final BlockingQueue<ResultSet> resultSets = new ArrayBlockingQueue<ResultSet>(10);
 
         for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
+            logger.info(sql);
             executorService.execute(new Runnable() {
                 public void run() {
                     jdbcTemplate.query(sql, new ResultSetExtractor<Object>() {
@@ -128,7 +146,7 @@ public class SqlTest extends BaseTest {
 
         List<ResultSet> allQuotaFields = new ArrayList<>();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < SqlRandomGenerator.split_table_numbers; i++) {
             try {
                 ResultSet quotaFields = resultSets.take();
                 // logger.info("子表查询结果：{}", quotaFields);
@@ -158,7 +176,7 @@ public class SqlTest extends BaseTest {
                     throws Exception {
                 // System.out.println("Sequence: " + sequence);
                 // System.out.println("ValueEvent: " + event.getValue().size());
-                if (indexInEvent.incrementAndGet() == 10) {
+                if (indexInEvent.incrementAndGet() == SqlRandomGenerator.split_table_numbers) {
                     logger.info("sqlExecuteMutilThreadTimeWithAsyBlockingQueen ten sql查询耗时:{}",
                             (System.currentTimeMillis() - t1) + " ms");
                 }
@@ -170,6 +188,7 @@ public class SqlTest extends BaseTest {
         final Dimension dimension = new Dimension("sub_tenant_id", "campaign", "adgroup", "keyword");
 
         for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
+            logger.info(sql);
             executorService.execute(new Runnable() {
                 public void run() {
                     jdbcTemplate.query(sql, new ResultSetExtractor<Object>() {
@@ -212,7 +231,7 @@ public class SqlTest extends BaseTest {
     // @Test
     public void sqlExecuteMutilThreadTimeTestForCountDownLunch() {
 
-        final CountDownLatch latch = new CountDownLatch(10);
+        final CountDownLatch latch = new CountDownLatch(SqlRandomGenerator.split_table_numbers);
         long t1 = System.currentTimeMillis();
         List<QuotaField> allQuotaFields = new ArrayList<>();
         final Dimension dimension = new Dimension("sub_tenant_id", "campaign", "adgroup", "keyword");
@@ -263,7 +282,7 @@ public class SqlTest extends BaseTest {
             e1.printStackTrace();
         }
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < SqlRandomGenerator.split_table_numbers; i++) {
             try {
                 // List<QuotaField> quotaFields = bl.take();
                 // logger.info("子表查询结果：{}", quotaFields);

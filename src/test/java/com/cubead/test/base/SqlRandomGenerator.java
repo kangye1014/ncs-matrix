@@ -8,7 +8,8 @@ public class SqlRandomGenerator {
 
     private static String[] fields = { "sub_tenant_id", "campaign", "adgroup", "keyword" };
     private static String tableNamePrexis = "ca_summary_136191";
-    public static String[] qutas = { "cost", "pv", "uv" };
+    public static String[] qutas = { "cost", "pv", "uv", "impressions" };
+    public final static int split_table_numbers = 10;
 
     public static String generteSql(final String tableName) {
         StringBuilder ab = new StringBuilder();
@@ -18,7 +19,7 @@ public class SqlRandomGenerator {
         ab.append(" ");
         ab.append(generteWhereLogDay());
         ab.append(generteGroupSQl());
-        ab.append("order by cost ");
+        ab.append("order by cost");
         return ab.toString();
     }
 
@@ -66,9 +67,9 @@ public class SqlRandomGenerator {
     }
 
     private static String[] generteSameQutaoTableNames(String qutao) {
-        String[] tables = new String[10];
+        String[] tables = new String[split_table_numbers];
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < split_table_numbers; i++) {
             tables[i] = tableNamePrexis + "_" + qutao + "_" + i;
         }
 
@@ -77,7 +78,7 @@ public class SqlRandomGenerator {
 
     public static String[] generTenRandomSql(String qutao) {
 
-        String[] sqls = new String[10];
+        String[] sqls = new String[split_table_numbers];
         String[] tables = generteSameQutaoTableNames(qutao);
 
         StringBuilder ab_pre = new StringBuilder();
@@ -88,9 +89,9 @@ public class SqlRandomGenerator {
         ab.append(" ");
         ab.append(generteWhereLogDay());
         ab.append(generteGroupSQl());
-        ab.append("order by cost ");
+        ab.append(" limit 10");
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < split_table_numbers; i++) {
             StringBuilder ab_whole = new StringBuilder();
             sqls[i] = ab_whole.append(ab_pre).append(tables[i]).append(ab).toString();
         }
@@ -103,9 +104,43 @@ public class SqlRandomGenerator {
         return generTenRandomSql(quta);
     }
 
+    public static enum TableEngine {
+
+        InnoDB("InnoDB"), MyISAM("MyISAM");
+
+        private String engineName;
+
+        private TableEngine(String engineName) {
+            this.engineName = engineName;
+        }
+
+        public String getTableEngine() {
+            return this.engineName;
+        }
+    }
+
+    public static String[] updateEngines(TableEngine tableEngine) {
+
+        String[] alterSqls = new String[split_table_numbers * qutas.length];
+
+        for (int j = 0; j < split_table_numbers; j++) {
+            for (int i = 0; i < qutas.length; i++) {
+                alterSqls[i * split_table_numbers + j] = "ALTER TABLE " + tableNamePrexis + "_" + qutas[i] + "_" + j
+                        + " ENGINE=" + tableEngine.getTableEngine();
+            }
+        }
+
+        return alterSqls;
+
+    }
+
     public static void main(String[] args) {
 
         for (String sql : generTenRandomSql()) {
+            System.out.println(sql);
+        }
+
+        for (String sql : updateEngines(TableEngine.InnoDB)) {
             System.out.println(sql);
         }
     }
