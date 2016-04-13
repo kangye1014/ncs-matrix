@@ -35,49 +35,32 @@ public class SqlTest extends BaseTest {
     ExecutorService executorService = Executors.newFixedThreadPool(30);
     ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
 
-    public static String select_sql = "SELECT sub_tenant_id, campaign, adgroup, keyword, sum(cost) cost ";
-    public static String where_sql = "WHERE log_day >= 20 AND log_day <= 395 ";
-    public static String group_sql = "GROUP BY sub_tenant_id,adgroup,keyword,campaign order by cost ";
-
-    public static final String COST_SQL_1 = select_sql + "FROM ca_summary_136191_cost_1 " + where_sql + group_sql;
-    public static final String COST_SQL_2 = select_sql + "FROM ca_summary_136191_cost_2 " + where_sql + group_sql;
-    public static final String COST_SQL_3 = select_sql + "FROM ca_summary_136191_cost_3 " + where_sql + group_sql;
-    public static final String COST_SQL_4 = select_sql + "FROM ca_summary_136191_cost_4 " + where_sql + group_sql;
-    public static final String COST_SQL_5 = select_sql + "FROM ca_summary_136191_cost_5 " + where_sql + group_sql;
-    public static final String COST_SQL_6 = select_sql + "FROM ca_summary_136191_cost_6 " + where_sql + group_sql;
-    public static final String COST_SQL_7 = select_sql + "FROM ca_summary_136191_cost_7 " + where_sql + group_sql;
-    public static final String COST_SQL_8 = select_sql + "FROM ca_summary_136191_cost_8 " + where_sql + group_sql;
-    public static final String COST_SQL_9 = select_sql + "FROM ca_summary_136191_cost_9 " + where_sql + group_sql;
-    public static final String COST_SQL_10 = select_sql + "FROM ca_summary_136191_cost_0 " + where_sql + group_sql;
-
-    public final static String[] SQLS_STRIN = { COST_SQL_1, COST_SQL_2, COST_SQL_3, COST_SQL_4, COST_SQL_5, COST_SQL_6,
-            COST_SQL_7, COST_SQL_8, COST_SQL_9, COST_SQL_10 };
-
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Test
+    // @Test
     public void sqlExcuteTimeMilis() {
         long t1 = System.currentTimeMillis();
         final Dimension dimension = new Dimension("sub_tenant_id", "campaign", "adgroup", "keyword");
-        List<QuotaField> quotaFields = jdbcTemplate.query(COST_SQL_1, new ResultSetExtractor<List<QuotaField>>() {
-            public List<QuotaField> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
-                List<QuotaField> quotaFields = new ArrayList<>();
+        List<QuotaField> quotaFields = jdbcTemplate.query(SqlRandomGenerator.generteSql("ca_summary_136191_cost_1"),
+                new ResultSetExtractor<List<QuotaField>>() {
+                    public List<QuotaField> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
+                        List<QuotaField> quotaFields = new ArrayList<>();
 
-                return quotaFields;
-            }
-        });
+                        return quotaFields;
+                    }
+                });
         logger.info("查询耗时:{}", (System.currentTimeMillis() - t1) + " ms");
     }
 
-    // @Test
+    @Test
     public void sqlExecuteMutilThreadTimeTest() {
 
         CompletionService<List<QuotaField>> completionService = new ExecutorCompletionService<List<QuotaField>>(
                 executorService);
         long t1 = System.currentTimeMillis();
 
-        for (final String sql : SQLS_STRIN) {
+        for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
             completionService.submit(new Callable<List<QuotaField>>() {
                 public List<QuotaField> call() throws Exception {
                     return jdbcTemplate.query(sql, new ResultSetExtractor<List<QuotaField>>() {
@@ -121,7 +104,7 @@ public class SqlTest extends BaseTest {
         long t1 = System.currentTimeMillis();
         final BlockingQueue<ResultSet> resultSets = new ArrayBlockingQueue<ResultSet>(10);
 
-        for (final String sql : SQLS_STRIN) {
+        for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
             executorService.execute(new Runnable() {
                 public void run() {
                     jdbcTemplate.query(sql, new ResultSetExtractor<Object>() {
@@ -186,7 +169,7 @@ public class SqlTest extends BaseTest {
         final RingBuffer<QutotaEvent> ringBuffer = disruptor.start();
         final Dimension dimension = new Dimension("sub_tenant_id", "campaign", "adgroup", "keyword");
 
-        for (final String sql : SQLS_STRIN) {
+        for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
             executorService.execute(new Runnable() {
                 public void run() {
                     jdbcTemplate.query(sql, new ResultSetExtractor<Object>() {
@@ -236,7 +219,7 @@ public class SqlTest extends BaseTest {
         // final BlockingQueue<List<QuotaField>> bl = new
         // ArrayBlockingQueue<>(10);
 
-        for (final String sql : SQLS_STRIN) {
+        for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
             executorService.execute(new Runnable() {
 
                 @Override
