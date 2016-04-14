@@ -1,6 +1,5 @@
 package com.cubead.test.base;
 
-import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -19,7 +18,7 @@ public class AlterTableEnginTest extends BaseTest {
         }
     }
 
-    @Test
+    // @Test
     public void updateTableMyISAMEngine() {
         for (String alterSql : SqlRandomGenerator.updateEnginesSql(TableEngine.MyISAM)) {
             jdbcTemplate.execute(alterSql);

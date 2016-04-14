@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -21,7 +20,7 @@ public class ProductJdbcTest extends BaseTest {
     @Autowired
     private MatrixTableSearch matrixTableSearch;
 
-    @Test
+    // @Test
     public void testMatrixTableSearch() {
 
         // 维度

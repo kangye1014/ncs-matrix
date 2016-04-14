@@ -89,7 +89,7 @@ public class SqlRandomGenerator {
         ab.append(" ");
         ab.append(generteWhereLogDay());
         ab.append(generteGroupSQl());
-        ab.append(" order by cost limit 10");
+        ab.append(" order by cost");
 
         for (int i = 0; i < split_table_numbers; i++) {
             StringBuilder ab_whole = new StringBuilder();

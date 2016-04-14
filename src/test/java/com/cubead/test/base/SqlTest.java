@@ -38,7 +38,7 @@ public class SqlTest extends BaseTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    // @Test
+    @Test
     public void sqlExcuteTimeMilis() {
         long t1 = System.currentTimeMillis();
         final Dimension dimension = new Dimension("sub_tenant_id", "campaign", "adgroup", "keyword");
@@ -53,7 +53,7 @@ public class SqlTest extends BaseTest {
         logger.info("单线程执行一个sql查询耗时:{}", (System.currentTimeMillis() - t1) + " ms");
     }
 
-    // @Test
+    @Test
     public void sqlExcuteTimeMilisWithTenSql() {
         long t1 = System.currentTimeMillis();
         for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
@@ -117,7 +117,7 @@ public class SqlTest extends BaseTest {
         singleExecutorService.shutdown();
     }
 
-    // @Test
+    @Test
     public void sqlExecuteMutilThreadTimeWithAsyBlockingQueen() {
 
         long t1 = System.currentTimeMillis();

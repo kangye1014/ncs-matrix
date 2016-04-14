@@ -2,6 +2,7 @@ package com.cubead.test.base;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,5 +23,10 @@ public class BaseTest {
     @AfterClass
     public static void aftertest() {
         logger.warn("======================单元测试结束=================");
+    }
+
+    @Test
+    public void testInit() {
+
     }
 }

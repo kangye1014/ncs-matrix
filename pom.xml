@@ -7,6 +7,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ncs-matrix</name>
 	
+	<!--  
 	<mirrors>
 		<mirror>
 			<id>nexus-public</id>
@@ -14,6 +15,7 @@
 			<url>http://192.168.3.185:8180/nexus/content/groups/public/</url>
 		</mirror>
 	</mirrors>
+-->
 
 	<build>
 		<plugins>
@@ -78,7 +80,7 @@
 		<!-- Plugin -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jdk.version>1.7</jdk.version>
-		<maven.test.skip>true</maven.test.skip>
+		<maven.test.skip>false</maven.test.skip>
 		<!-- Version <ck.version>1.0-SNAPSHOT</ck.version> -->
 		<!-- 确认是否需要 -->
 		<hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
