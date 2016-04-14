@@ -13,7 +13,7 @@ public class AlterTableEnginTest extends BaseTest {
 
     // @Test
     public void updateTableInnoDBEngine() {
-        for (String alterSql : SqlRandomGenerator.updateEngines(TableEngine.InnoDB)) {
+        for (String alterSql : SqlRandomGenerator.updateEnginesSql(TableEngine.InnoDB)) {
             jdbcTemplate.execute(alterSql);
             logger.info("{}更新成功!", alterSql);
         }
@@ -21,7 +21,7 @@ public class AlterTableEnginTest extends BaseTest {
 
     @Test
     public void updateTableMyISAMEngine() {
-        for (String alterSql : SqlRandomGenerator.updateEngines(TableEngine.MyISAM)) {
+        for (String alterSql : SqlRandomGenerator.updateEnginesSql(TableEngine.MyISAM)) {
             jdbcTemplate.execute(alterSql);
             logger.info("{}更新成功!", alterSql);
         }

@@ -6,6 +6,14 @@
 	<artifactId>ncs-matrix</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ncs-matrix</name>
+	
+	<mirrors>
+		<mirror>
+			<id>nexus-public</id>
+			<mirrorOf>*</mirrorOf>
+			<url>http://192.168.3.185:8180/nexus/content/groups/public/</url>
+		</mirror>
+	</mirrors>
 
 	<build>
 		<plugins>

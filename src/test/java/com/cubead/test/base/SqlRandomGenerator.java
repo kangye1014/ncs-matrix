@@ -89,7 +89,7 @@ public class SqlRandomGenerator {
         ab.append(" ");
         ab.append(generteWhereLogDay());
         ab.append(generteGroupSQl());
-        ab.append(" limit 10");
+        ab.append(" order by cost limit 10");
 
         for (int i = 0; i < split_table_numbers; i++) {
             StringBuilder ab_whole = new StringBuilder();
@@ -119,7 +119,7 @@ public class SqlRandomGenerator {
         }
     }
 
-    public static String[] updateEngines(TableEngine tableEngine) {
+    public static String[] updateEnginesSql(TableEngine tableEngine) {
 
         String[] alterSqls = new String[split_table_numbers * qutas.length];
 
@@ -140,7 +140,7 @@ public class SqlRandomGenerator {
             System.out.println(sql);
         }
 
-        for (String sql : updateEngines(TableEngine.InnoDB)) {
+        for (String sql : updateEnginesSql(TableEngine.InnoDB)) {
             System.out.println(sql);
         }
     }

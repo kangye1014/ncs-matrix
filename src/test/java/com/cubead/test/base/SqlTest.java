@@ -57,6 +57,7 @@ public class SqlTest extends BaseTest {
     public void sqlExcuteTimeMilisWithTenSql() {
         long t1 = System.currentTimeMillis();
         for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
+            logger.info(sql);
             jdbcTemplate.query(sql, new ResultSetExtractor<List<QuotaField>>() {
                 public List<QuotaField> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
                     List<QuotaField> quotaFields = new ArrayList<>();
@@ -110,6 +111,7 @@ public class SqlTest extends BaseTest {
 
     @AfterClass
     public static void afterClass() {
+        // RpcContext.getContext().getFuture();
         logger.info("close the pool");
         executorService.shutdown();
         singleExecutorService.shutdown();
@@ -235,8 +237,6 @@ public class SqlTest extends BaseTest {
         long t1 = System.currentTimeMillis();
         List<QuotaField> allQuotaFields = new ArrayList<>();
         final Dimension dimension = new Dimension("sub_tenant_id", "campaign", "adgroup", "keyword");
-        // final BlockingQueue<List<QuotaField>> bl = new
-        // ArrayBlockingQueue<>(10);
 
         for (final String sql : SqlRandomGenerator.generTenRandomSql()) {
             executorService.execute(new Runnable() {
