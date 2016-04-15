@@ -1,5 +1,7 @@
 package com.cubead.performance.martix;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -14,6 +16,7 @@ import org.apache.commons.collections.CollectionUtils;
  */
 public class Dimension {
 
+    public final static String SPLIT_SIGN = "-";
     private List<Dimen> dimens;
 
     public Dimension(Set<String> fields) {
@@ -34,7 +37,7 @@ public class Dimension {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < dimens.size(); i++) {
             sb.append(dimens.get(i).value);
-            sb.append("-");
+            sb.append(SPLIT_SIGN);
         }
         return sb.toString();
     }
@@ -92,4 +95,15 @@ public class Dimension {
         }
     }
 
+    @Override
+    public String toString() {
+        return "Dimension [dimens=" + dimens + "]";
+    }
+
+    public void inizValues(ResultSet resultSet) throws SQLException {
+        for (Dimen dimen : dimens) {
+            dimen.setValue(resultSet.getObject(dimen.getField()));
+        }
+
+    }
 }

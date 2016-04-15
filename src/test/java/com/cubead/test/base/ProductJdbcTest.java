@@ -12,6 +12,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.cubead.performance.martix.MatrixTableSearch;
 import com.cubead.performance.martix.MatrixTableSearch.QuotaField;
 
+/**
+ * 水平垂直切分启动类
+ * 
+ * @author kangye
+ */
 public class ProductJdbcTest extends BaseTest {
 
     @Autowired

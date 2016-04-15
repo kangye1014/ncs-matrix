@@ -10,9 +10,9 @@ import org.apache.commons.lang3.StringUtils;
 public enum Quota {
 
     // 0 - 4 pv
-    PV("pv", 0), UV("uv", 1), IMPRESSION("impression", 2), COST("cost", 3), ROI("roi", 4),
+    PV("pv", 0), UV("uv", 1), IMPRESSIONS("impressions", 2), COST("cost", 3), ROI("roi", 4),
     // 5 - 10
-    EXT_RESOURCE_COUNT("ext_resource_count", 5), IMPRESSIONS("impressions", 6);
+    EXT_RESOURCE_COUNT("ext_resource_count", 5);
 
     // 数据库映的字段名
     private String quota;

@@ -3,9 +3,7 @@ package com.cubead.performance.martix;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -20,6 +18,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.stereotype.Component;
 
+import com.cubead.performance.martix.SqlDismantling.QueryUnit;
+
+/**
+ * 分表执行引擎
+ * 
+ * @author kangye
+ */
 @Component
 public class QuatoSplitCalculationExecutor {
 
@@ -37,10 +42,12 @@ public class QuatoSplitCalculationExecutor {
             return null;
 
         RowMergeResultSet rowMergeResultSet = new RowMergeResultSet();
+        SqlDismantling[] sqlDismantlings = rowMergeResultSet.validateQueryUnitGroup(quotaunits);
+
         final CountDownLatch latch = new CountDownLatch(quotaunits.length);
 
-        for (QueryUnit queryUnit : quotaunits) {
-            executorService.execute(new CalculatSqlRowTask(queryUnit, rowMergeResultSet, latch));
+        for (int i = 0; i < quotaunits.length; i++) {
+            executorService.execute(new CalculatSqlRowTask(sqlDismantlings[i], rowMergeResultSet, latch));
         }
 
         try {
@@ -53,59 +60,28 @@ public class QuatoSplitCalculationExecutor {
 
     }
 
-    public static class QueryUnit {
-
-        private String sql;
-        private Set<Quota> quotas;
-
-        public String getSql() {
-            return sql;
-        }
-
-        public void setSql(String sql) {
-            this.sql = sql;
-        }
-
-        public Set<Quota> getQuotas() {
-            return quotas;
-        }
-
-        public void setQuotas(Set<Quota> quotas) {
-            this.quotas = quotas;
-        }
-
-        public void setQuotas(Quota... quotas) {
-            if (null == quotas)
-                return;
-            for (Quota quota : quotas) {
-                this.quotas = new HashSet<>();
-                this.quotas.add(quota);
-            }
-        }
-    }
-
     class CalculatSqlRowTask implements Runnable {
 
-        private QueryUnit queryUnit;
         private RowMergeResultSet rowMergeResultSet;
         private CountDownLatch latch;
         private SqlDismantling sqlDismantling;
 
-        public CalculatSqlRowTask(QueryUnit queryUnit, RowMergeResultSet rowMergeResultSet, CountDownLatch latch) {
+        public CalculatSqlRowTask(SqlDismantling sqlDismantling, RowMergeResultSet rowMergeResultSet,
+                CountDownLatch latch) {
             super();
-            this.queryUnit = queryUnit;
             this.rowMergeResultSet = rowMergeResultSet;
             this.latch = latch;
-            this.sqlDismantling = new SqlDismantling(queryUnit);
+            this.sqlDismantling = sqlDismantling;
         }
 
         @Override
         public void run() {
-            logger.debug("{}开始结束", queryUnit.sql);
             final Dimension dimension = new Dimension(sqlDismantling.getFields());
-            jdbcTemplate.query(queryUnit.sql, new ResultSetExtractor<Object>() {
+            jdbcTemplate.query(sqlDismantling.getQueryUnit().getSql(), new ResultSetExtractor<Object>() {
                 public Object extractData(ResultSet resultSet) throws SQLException, DataAccessException {
+                    int rowNumber = 0;
                     while (resultSet.next()) {
+                        dimension.inizValues(resultSet);
                         SQLRowResultMapping sqlRowResultMapping = new SQLRowResultMapping(dimension);
                         List<QuotaWithValue> quotaWithValues = new ArrayList<>();
                         for (Quota quota : sqlDismantling.getQuotas()) {
@@ -115,8 +91,9 @@ public class QuatoSplitCalculationExecutor {
                         }
                         sqlRowResultMapping.setQuotaWithValues(quotaWithValues);
                         rowMergeResultSet.addRowMergeResult(sqlRowResultMapping);
+                        rowNumber++;
                     }
-                    logger.debug("{}执行结束,加载数据行是:{}", queryUnit.sql, resultSet.getFetchSize());
+                    logger.debug("{}执行结束,加载数据行是:{}", sqlDismantling.getQueryUnit().getSql(), rowNumber);
                     latch.countDown();
                     return null;
                 }
@@ -124,89 +101,4 @@ public class QuatoSplitCalculationExecutor {
         }
     }
 
-    public static class SqlDismantling {
-
-        private QueryUnit queryUnit;
-        private Set<String> allFields;
-        private Set<Quota> quotas;
-
-        public SqlDismantling(QueryUnit queryUnit) {
-            this.queryUnit = queryUnit;
-            validateQuotaSql();
-        }
-
-        public Set<String> getFields() {
-            return allFields;
-        }
-
-        public Set<Quota> getQuotas() {
-            return quotas;
-        }
-
-        public void validateQuotaSql() {
-
-            if (queryUnit == null || queryUnit.sql == null || queryUnit.quotas == null)
-                throw new IllegalArgumentException("queryUnit信息不完整,存在空值");
-
-            String lowSql = queryUnit.sql.toLowerCase();
-            int startIndex = lowSql.indexOf(" select ") + 8;
-            int endIndex = lowSql.indexOf(" from ");
-
-            Set<Quota> quotasInUnit = queryUnit.quotas;
-            String[] fieldSet = lowSql.substring(startIndex, endIndex).split(",");
-
-            allFields = new HashSet<String>();
-            quotas = new HashSet<>();
-
-            for (String field : fieldSet) {
-
-                field = field.trim();
-
-                int asIndex = field.indexOf(" as ");
-                if (asIndex > -1)
-                    field = field.substring(asIndex + 3);
-
-                int emptyIndex = field.indexOf(" ");
-                if (emptyIndex > -1)
-                    field = field.substring(emptyIndex + 1).trim();
-
-                Quota quota = Quota.getByQuota(field);
-                if (quota == null || !quotasInUnit.contains(quota)) {
-                    allFields.add(field);
-                } else {
-                    quotas.add(quota);
-                }
-            }
-
-            if (quotas.size() < quotasInUnit.size()) {
-                throw new IllegalArgumentException("queryUnit中指标不完全存在于语句中");
-            }
-
-            if (allFields.size() == 0) {
-                throw new IllegalArgumentException("queryUnit不存在任何维度");
-            }
-
-            logger.debug("sql:{},解析的字段是:{}", getFields());
-            logger.debug("sql:{},解析的维度是:{}", getQuotas());
-        }
-    }
-
-    public static void main(String[] args) {
-
-        QueryUnit queryUnit = new QueryUnit();
-        queryUnit.setSql(" select ssElect a, b e, c as c1 , fromov ,pv, cost9, dfs as e fRom jkljlkj");
-
-        Set<Quota> quotas = new HashSet<Quota>();
-        quotas.add(Quota.COST);
-        quotas.add(Quota.PV);
-        queryUnit.setQuotas(quotas);
-
-        System.out.println(quotas);
-
-        SqlDismantling sqlDismantling = new SqlDismantling(queryUnit);
-
-        System.out.println(sqlDismantling.getFields());
-        System.out.println(sqlDismantling.getQuotas());
-
-    }
 }

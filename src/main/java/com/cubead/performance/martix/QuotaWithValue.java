@@ -37,4 +37,9 @@ public class QuotaWithValue {
         super();
         this.quota = quota;
     }
+
+    @Override
+    public String toString() {
+        return "QuotaWithValue [quota=" + quota + ", value=" + value + "]";
+    }
 }

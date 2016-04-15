@@ -2,11 +2,14 @@ package com.cubead.performance.martix;
 
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.collections.CollectionUtils;
+
+import com.cubead.performance.martix.SqlDismantling.QueryUnit;
 
 /**
  * 合并后的结果集
@@ -16,6 +19,8 @@ import org.apache.commons.collections.CollectionUtils;
 public class RowMergeResultSet {
 
     private Map<String, Double[]> rowQuotaSetMap = new ConcurrentHashMap<String, Double[]>();
+    private TreeSet<String> fieldList = new TreeSet<String>();
+
     // 线程是尽量小,减少和DB查询线程抢占CPU
     private static ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -73,4 +78,34 @@ public class RowMergeResultSet {
     public Map<String, Double[]> getRowQuotaSetMap() {
         return rowQuotaSetMap;
     }
+
+    public TreeSet<String> getFieldList() {
+        return fieldList;
+    }
+
+    public SqlDismantling[] validateQueryUnitGroup(QueryUnit... quotaunits) {
+
+        if (null == quotaunits)
+            throw new IllegalArgumentException("未找到queryUnit,请检查sql");
+
+        SqlDismantling[] sqlDismantlings = new SqlDismantling[quotaunits.length];
+
+        for (int i = 0; i < quotaunits.length; i++) {
+
+            SqlDismantling sqlDismantling = new SqlDismantling(quotaunits[i]);
+            sqlDismantlings[i] = sqlDismantling;
+
+            if (i == 0) {
+                fieldList = sqlDismantling.getFields();
+            } else {
+
+                if (!CollectionUtils.isEqualCollection(fieldList, sqlDismantling.getFields())) {
+                    throw new IllegalArgumentException("集合间维度存在不一致,请检查sql");
+                }
+            }
+        }
+
+        return sqlDismantlings;
+    }
+
 }

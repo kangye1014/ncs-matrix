@@ -34,7 +34,7 @@
 	
 
 	<!-- project default level -->
-	<logger name="com.cubead" level="info" />
+	<logger name="com.cubead" level="debug" />
 	
 	<!-- root -->
 	<root level="debug">

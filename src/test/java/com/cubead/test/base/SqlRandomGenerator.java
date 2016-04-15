@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * 随机生成测试sql工具类/避免数据换缓存影响效果
+ * 
+ * @author kangye
+ */
 public class SqlRandomGenerator {
 
     private static String[] fields = { "sub_tenant_id", "campaign", "adgroup", "keyword" };

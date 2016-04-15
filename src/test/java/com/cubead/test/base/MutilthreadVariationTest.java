@@ -30,7 +30,12 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 
-public class SqlTest extends BaseTest {
+/**
+ * 多线程查询的多种实现对比
+ * 
+ * @author kangye
+ */
+public class MutilthreadVariationTest extends BaseTest {
 
     static ExecutorService executorService = Executors.newFixedThreadPool(9);
     static ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();

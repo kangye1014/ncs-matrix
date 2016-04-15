@@ -1,19 +1,31 @@
 package com.cubead.test.base;
 
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.alibaba.fastjson.JSONObject;
+import com.cubead.performance.compress.RowMergeResultTransform;
 import com.cubead.performance.martix.QuatoSplitCalculationExecutor;
-import com.cubead.performance.martix.QuatoSplitCalculationExecutor.QueryUnit;
 import com.cubead.performance.martix.Quota;
 import com.cubead.performance.martix.RowMergeResultSet;
+import com.cubead.performance.martix.SqlDismantling.QueryUnit;
 
+/**
+ * 垂直压缩方案启动类
+ * 
+ * @author kangye
+ */
 public class QuatoSplitCalculationExecutorTest extends BaseTest {
 
     @Autowired
     private QuatoSplitCalculationExecutor quatoSplitCalculationExecutor;
+
+    @Autowired
+    private RowMergeResultTransform resultTransform;
 
     private static QueryUnit roiQueryUnit;
     private static QueryUnit compressedQueryUnit;
@@ -37,7 +49,7 @@ public class QuatoSplitCalculationExecutorTest extends BaseTest {
                         .append("SELECT sub_tenant_id, campaign, adgroup, keyword, sum(ext_resource_count) ext_resource_count, sum(impressions) impressions ")
                         .append(" from ca_summary_136191_compressed ").append(" where log_day >= 6 AND log_day <= 55 ")
                         .append(" GROUP BY sub_tenant_id, campaign, adgroup, keyword ").toString());
-        compressedQueryUnit.setQuotas(Quota.IMPRESSION, Quota.EXT_RESOURCE_COUNT);
+        compressedQueryUnit.setQuotas(Quota.IMPRESSIONS, Quota.EXT_RESOURCE_COUNT);
 
         // pv
         pvQueryUnit = new QueryUnit();
@@ -52,9 +64,15 @@ public class QuatoSplitCalculationExecutorTest extends BaseTest {
     public void calculatAllMergeResultSetTest() {
 
         Assert.assertNotNull(quatoSplitCalculationExecutor);
+
+        // 获取结果集
         RowMergeResultSet rowMergeResultSet = quatoSplitCalculationExecutor.calculatAllMergeResultSet(roiQueryUnit,
                 compressedQueryUnit, pvQueryUnit);
 
-        logger.info("查询结果合集:{}", rowMergeResultSet.getRowQuotaSetMap().size());
+        // 将结果转化为JSON串数组
+        List<JSONObject> josnRows = resultTransform.transFormRowResultSetAsAJsonObjects(rowMergeResultSet);
+
+        logger.info("查询结果合集:{}", josnRows.size());
+        logger.info("数据结果展示:{}", josnRows.get(0));
     }
 }

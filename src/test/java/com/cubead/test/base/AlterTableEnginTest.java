@@ -5,6 +5,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.cubead.test.base.SqlRandomGenerator.TableEngine;
 
+/**
+ * 修改表引擎,慎重使用
+ * 
+ * @author kangye
+ */
 public class AlterTableEnginTest extends BaseTest {
 
     @Autowired
