@@ -69,6 +69,7 @@ public class RowMergeResultTransform {
      * 从缓存中读取真是的映射数据
      */
     public String getMappingValueFromCache(String field, String value) {
+
         // TODO 请在这里完成映射加载逻辑
 
         if ("adgroup".equals(field)) {

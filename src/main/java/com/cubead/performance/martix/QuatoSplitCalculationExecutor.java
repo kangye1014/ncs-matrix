@@ -46,7 +46,7 @@ public class QuatoSplitCalculationExecutor {
 
         final CountDownLatch latch = new CountDownLatch(quotaunits.length);
 
-        for (int i = 0; i < quotaunits.length; i++) {
+        for (int i = 0; i < sqlDismantlings.length; i++) {
             executorService.execute(new CalculatSqlRowTask(sqlDismantlings[i], rowMergeResultSet, latch));
         }
 
@@ -79,6 +79,17 @@ public class QuatoSplitCalculationExecutor {
             final Dimension dimension = new Dimension(sqlDismantling.getFields());
             jdbcTemplate.query(sqlDismantling.getQueryUnit().getSql(), new ResultSetExtractor<Object>() {
                 public Object extractData(ResultSet resultSet) throws SQLException, DataAccessException {
+
+                    if (sqlDismantling.getIsLimitUnit() == false && rowMergeResultSet.getLimitHasFinished() == false) {
+                        try {
+                            synchronized (rowMergeResultSet.getLimitHasFinished()) {
+                                rowMergeResultSet.getLimitHasFinished().wait();
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
                     int rowNumber = 0;
                     while (resultSet.next()) {
                         dimension.inizValues(resultSet);
@@ -90,9 +101,17 @@ public class QuatoSplitCalculationExecutor {
                             quotaWithValues.add(quotaWithValue);
                         }
                         sqlRowResultMapping.setQuotaWithValues(quotaWithValues);
-                        rowMergeResultSet.addRowMergeResult(sqlRowResultMapping);
+                        rowMergeResultSet.addRowMergeResult(sqlRowResultMapping, sqlDismantling.getIsLimitUnit());
                         rowNumber++;
                     }
+
+                    if (sqlDismantling.getIsLimitUnit()) {
+                        synchronized (rowMergeResultSet.getLimitHasFinished()) {
+                            rowMergeResultSet.setLimitHasFinished(true);
+                            rowMergeResultSet.getLimitHasFinished().notifyAll();
+                        }
+                    }
+
                     logger.debug("{}执行结束,加载数据行是:{}", sqlDismantling.getQueryUnit().getSql(), rowNumber);
                     latch.countDown();
                     return null;
