@@ -16,7 +16,7 @@ import org.apache.commons.collections.CollectionUtils;
 public class RowMergeResultSet {
 
     private Map<String, Double[]> rowQuotaSetMap = new ConcurrentHashMap<String, Double[]>();
-    // 线程是尽量小,尽量减少和DB查询线程抢占CPU
+    // 线程是尽量小,减少和DB查询线程抢占CPU
     private static ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     public RowMergeResultSet() {
@@ -68,5 +68,9 @@ public class RowMergeResultSet {
         }
 
         return doubles;
+    }
+
+    public Map<String, Double[]> getRowQuotaSetMap() {
+        return rowQuotaSetMap;
     }
 }

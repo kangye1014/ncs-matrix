@@ -34,10 +34,10 @@
 	
 
 	<!-- project default level -->
-	<logger name="com.ishidai" level="info" />
+	<logger name="com.cubead" level="info" />
 	
 	<!-- root -->
-	<root level="info">
+	<root level="debug">
 		<appender-ref ref="console" />
 		<appender-ref ref="rollingFile" />
 		<appender-ref ref="errorRollingFile" />
@@ -50,5 +50,6 @@
    <logger name="org.apache" level="info"/>
    <logger name="org.mybatis.spring" level="info"/>
    <logger name="org.apache.zookeeper" level="info"/>
+   <logger name="com.cubead.performance.martix.QuatoSplitCalculationExecutor" level="debug"/>
    
 </configuration>

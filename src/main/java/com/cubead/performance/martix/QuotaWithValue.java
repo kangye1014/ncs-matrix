@@ -1,5 +1,10 @@
 package com.cubead.performance.martix;
 
+/**
+ * 含有值的指标
+ * 
+ * @author kangye
+ */
 public class QuotaWithValue {
 
     private Quota quota;

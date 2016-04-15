@@ -73,6 +73,15 @@ public class QuatoSplitCalculationExecutor {
         public void setQuotas(Set<Quota> quotas) {
             this.quotas = quotas;
         }
+
+        public void setQuotas(Quota... quotas) {
+            if (null == quotas)
+                return;
+            for (Quota quota : quotas) {
+                this.quotas = new HashSet<>();
+                this.quotas.add(quota);
+            }
+        }
     }
 
     class CalculatSqlRowTask implements Runnable {
@@ -92,6 +101,7 @@ public class QuatoSplitCalculationExecutor {
 
         @Override
         public void run() {
+            logger.debug("{}开始结束", queryUnit.sql);
             final Dimension dimension = new Dimension(sqlDismantling.getFields());
             jdbcTemplate.query(queryUnit.sql, new ResultSetExtractor<Object>() {
                 public Object extractData(ResultSet resultSet) throws SQLException, DataAccessException {
@@ -106,6 +116,7 @@ public class QuatoSplitCalculationExecutor {
                         sqlRowResultMapping.setQuotaWithValues(quotaWithValues);
                         rowMergeResultSet.addRowMergeResult(sqlRowResultMapping);
                     }
+                    logger.debug("{}执行结束,加载数据行是:{}", queryUnit.sql, resultSet.getFetchSize());
                     latch.countDown();
                     return null;
                 }
@@ -113,7 +124,7 @@ public class QuatoSplitCalculationExecutor {
         }
     }
 
-    static class SqlDismantling {
+    public static class SqlDismantling {
 
         private QueryUnit queryUnit;
         private Set<String> allFields;
@@ -138,8 +149,8 @@ public class QuatoSplitCalculationExecutor {
                 throw new IllegalArgumentException("queryUnit信息不完整,存在空值");
 
             String lowSql = queryUnit.sql.toLowerCase();
-            int startIndex = lowSql.indexOf("select") + 6;
-            int endIndex = lowSql.indexOf("from");
+            int startIndex = lowSql.indexOf(" select ") + 8;
+            int endIndex = lowSql.indexOf(" from ");
 
             Set<Quota> quotasInUnit = queryUnit.quotas;
             String[] fieldSet = lowSql.substring(startIndex, endIndex).split(",");
@@ -168,20 +179,22 @@ public class QuatoSplitCalculationExecutor {
             }
 
             if (quotas.size() < quotasInUnit.size()) {
-                // throw new IllegalArgumentException("queryUnit中指标不完全存在于语句中");
+                throw new IllegalArgumentException("queryUnit中指标不完全存在于语句中");
             }
 
             if (allFields.size() == 0) {
-                // throw new IllegalArgumentException("queryUnit不存在任何维度");
+                throw new IllegalArgumentException("queryUnit不存在任何维度");
             }
 
+            logger.debug("sql:{},解析的字段是:{}", getFields());
+            logger.debug("sql:{},解析的维度是:{}", getQuotas());
         }
     }
 
     public static void main(String[] args) {
 
         QueryUnit queryUnit = new QueryUnit();
-        queryUnit.setSql(" select ssElect a, b , c as c1 , fromov ,pv, cost, dfs as e fRom jkljlkj");
+        queryUnit.setSql(" select ssElect a, b e, c as c1 , fromov ,pv, cost9, dfs as e fRom jkljlkj");
 
         Set<Quota> quotas = new HashSet<Quota>();
         quotas.add(Quota.COST);
